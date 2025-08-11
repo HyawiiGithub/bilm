@@ -1,49 +1,43 @@
 (async () => {
-  // Allow script to run ONLY on embed hosts
-  const allowedDomains = ['vidsrc.xyz', 'vidplay.to', 'videocdn.tv'];
+  console.log('[Universal Adblock] Running...');
 
-  const hostname = location.hostname;
-
-  // Exit unless we're on a matching embed domain
-  if (!allowedDomains.some(domain => hostname.includes(domain))) {
-    console.log('[adblock.js] Not running on this domain:', hostname);
-    return;
-  }
-
-  console.log('[adblock.js] Running on:', hostname);
-
-  const res = await fetch('/bilm/shared/adblock/filters/ads.txt');
+  // Fetch and parse ad filters (you can replace this with a more comprehensive list)
+  const res = await fetch('https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/filters.txt');
   const txt = await res.text();
   const filters = txt
     .split('\n')
     .map(line => line.trim())
     .filter(line => line && !line.startsWith('!') && !line.startsWith('@@'));
 
+  // Convert filters into regex patterns
   const patterns = filters.map(line => {
     try {
       const regex = line
-        .replace(/[\.\?\+\[\]\(\)\{\}\\]/g, '\\$&') // escape regex chars
-        .replace(/\*/g, '.*')
-        .replace(/\^/g, '\\b');
-      return new RegExp(regex, 'i');
+        .replace(/[\.\?\+\[\]\(\)\{\}\\]/g, '\\$&') // Escape regex chars
+        .replace(/\*/g, '.*') // Convert wildcards
+        .replace(/\^/g, '\\b'); // Anchor to word boundary
+      return new RegExp(regex, 'i'); // Case-insensitive
     } catch {
       return null;
     }
   }).filter(Boolean);
 
-  function matchAndRemove() {
-    const elements = document.querySelectorAll('iframe, script, img, link, div');
+  // Remove matching elements (ads, trackers, etc.)
+  function blockAds() {
+    const elements = document.querySelectorAll('iframe, script, img, link, div, video, audio, embed, object');
     elements.forEach(el => {
-      const src = el.src || el.href || '';
+      const src = el.src || el.href || el.getAttribute('data-src') || '';
       if (patterns.some(rx => rx.test(src))) {
-        console.warn('[adblock.js] Removed element:', el);
+        console.warn('[Universal Adblock] Removed:', el);
         el.remove();
       }
     });
   }
 
-  matchAndRemove();
-
-  new MutationObserver(() => matchAndRemove())
-    .observe(document.documentElement, { childList: true, subtree: true });
+  // Run immediately and watch for new elements
+  blockAds();
+  new MutationObserver(blockAds).observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+  });
 })();
