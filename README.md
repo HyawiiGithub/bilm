@@ -10,4 +10,7 @@ What changed
 Testing
 - Open `test/ad-demo.html` locally and compare the sandbox vs unsandboxed frame behaviour.
 
+Deployment / Rebrand notes
+This repo is rebranded to CineNova. See `docs/github-pages-deploy.md` for how to publish under `/cinenova/` on GitHub Pages.
+
 See `docs/remove-ads.md` for more details.

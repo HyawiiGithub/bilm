@@ -1,7 +1,8 @@
 const TMDB_API_KEY = '3ade810499876bb5672f40e54960e6a2';
-// Build a dynamic base URL so the app works both when served at root and under /bilm
+// Build a dynamic base URL so the app works both when served at root and under /cinenova
 const _parts = location.pathname.split('/').filter(Boolean);
-const _prefix = _parts[0] === 'bilm' ? '/bilm' : '';
+// Assume site will be hosted under '/cinenova' after rebrand; otherwise root (empty prefix)
+const _prefix = _parts[0] === 'cinenova' ? '/cinenova' : '';
 const BASE_URL = `${location.origin}${_prefix}`;
 const moviesPerLoad = 15;
 

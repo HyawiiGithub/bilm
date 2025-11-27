@@ -4,9 +4,26 @@
 
   const shadow = container.attachShadow({ mode: 'open' });
 
-  // Detect common base path. If the site is served under /bilm/ (like GitHub Pages), keep that prefix.
+  // Detect common base path. After rebrand this script will prefer /cinenova; if the site is root, basePrefix will be empty.
   // reuse pathParts declared above (avoid redeclaration)
-  const basePrefix = pathParts[0] === 'bilm' ? '/bilm' : '';
+  // After rebrand, assume the site will live under /cinenova/. If not, basePrefix is empty (root).
+  const basePrefix = pathParts[0] === 'cinenova' ? '/cinenova' : '';
+
+  // Migrate legacy localStorage keys from 'bilm-*' to 'cinenova-*' to preserve user progress after rebrand.
+  try {
+    const keys = Object.keys(localStorage || {});
+    for (const key of keys) {
+      if (key.startsWith('bilm-')) {
+        const newKey = key.replace(/^bilm-/, 'cinenova-');
+        if (!localStorage.getItem(newKey)) {
+          localStorage.setItem(newKey, localStorage.getItem(key));
+        }
+        // Keep the old key for safety — don't remove automatically.
+      }
+    }
+  } catch (e) {
+    // Fail silently — do not break page if localStorage is unavailable
+  }
 
   const [htmlRes, cssRes] = await Promise.all([
     fetch(`${basePrefix}/shared/navbar.html`),
@@ -18,7 +35,7 @@
 
   shadow.innerHTML = `<style>${css}</style>${html}`;
 
-  // Wire the logo (was previously an absolute /bilm/ link) to work with basePrefix
+  // Wire the logo so it navigates using the new cinenova base path (or root when in dev)
   const logoAnchor = shadow.querySelector('.logo');
   if (logoAnchor) {
     logoAnchor.addEventListener('click', e => {
