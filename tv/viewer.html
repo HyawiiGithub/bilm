@@ -14,7 +14,7 @@
   <link rel="manifest" href="../manifest.json" />
   <link rel="apple-touch-icon" href="../icon.png" />
 
-  <title>Bilm 💜 - TV Show Viewer</title>
+  <title>CineNova 💜 - TV Show Viewer</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/bilm/shared/navbar.css" />
@@ -196,8 +196,31 @@
       width: 100%;
       height: 100%;
       z-index: 5;
-      pointer-events: none;
+      pointer-events: auto; /* intercept clicks by default to prevent accidental ad-click-through */
       background: transparent;
+    }
+
+    #shieldControls {
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      display: flex;
+      gap: 8px;
+      z-index: 20;
+      align-items: center;
+    }
+
+    .shieldBtn {
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.06);
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      backdrop-filter: blur(4px);
+      font-size: 13px;
     }
   </style>
 </head>
@@ -214,10 +237,15 @@
         src=""
         allowfullscreen
         allow="fullscreen; encrypted-media"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock"
         playsinline
         scrolling="no"
       ></iframe>
-      <div id="clickShield"></div>
+      <div id="clickShield" aria-hidden="true"></div>
+      <div id="shieldControls" aria-hidden="false">
+        <div class="shieldBtn" id="shieldStatus">Ad clicks blocked</div>
+        <button class="shieldBtn" id="shieldToggle">Enable player</button>
+      </div>
     </div>
     <button id="fullscreenBtn">Fullscreen</button>
     <button id="closeBtn">X</button>
@@ -304,15 +332,62 @@
     }
   });
 
+  // ----- Anti-click-ad shield -----
+  (function () {
+    const clickShield = document.getElementById('clickShield');
+    const shieldToggle = document.getElementById('shieldToggle');
+    const shieldStatus = document.getElementById('shieldStatus');
+
+    let shieldOn = true;
+
+    function setShield(on) {
+      shieldOn = on;
+      if (on) {
+        clickShield.style.pointerEvents = 'auto';
+        shieldStatus.textContent = 'Ad clicks blocked';
+        shieldToggle.textContent = 'Enable player';
+      } else {
+        clickShield.style.pointerEvents = 'none';
+        shieldStatus.textContent = 'Player interactive';
+        shieldToggle.textContent = 'Disable player';
+      }
+    }
+
+    clickShield.addEventListener('click', e => {
+      if (!shieldOn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      shieldStatus.textContent = 'Blocked ad-click — click "Enable player" to interact';
+      setTimeout(() => shieldStatus.textContent = 'Ad clicks blocked', 2200);
+    });
+
+    clickShield.addEventListener('auxclick', e => {
+      if (!shieldOn) return;
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
+    clickShield.addEventListener('contextmenu', e => {
+      if (!shieldOn) return;
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
+    shieldToggle.addEventListener('click', () => setShield(!shieldOn));
+
+    // Initial state: ON (blocked)
+    setShield(true);
+  })();
+
   function saveProgress() {
-    localStorage.setItem(`bilm-tv-progress-${tmdbId}`, JSON.stringify({
+    localStorage.setItem(`cinenova-tv-progress-${tmdbId}`, JSON.stringify({
       season: currentSeason,
       episode: currentEpisode
     }));
   }
 
   function loadProgress() {
-    const saved = localStorage.getItem(`bilm-tv-progress-${tmdbId}`);
+    const saved = localStorage.getItem(`cinenova-tv-progress-${tmdbId}`);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);

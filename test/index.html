@@ -9,7 +9,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#000000" />
 
-  <title>Bilm 💜 - TV Show Viewer (GUI)</title>
+  <title>CineNova 💜 - TV Show Viewer (GUI)</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet" />
 
@@ -158,6 +158,9 @@
         font-size: 14px;
         padding: 6px 10px;
       }
+      /* shield control styles (test page) */
+      #shieldControls{ position: absolute; right: 8px; bottom: 8px; display:flex; gap:8px; z-index:20; align-items:center }
+      .shieldBtn{ background: rgba(0,0,0,0.6); color:#fff; border-radius:6px; padding:6px 8px; font-weight:600; cursor:pointer; font-size:13px }
     }
   </style>
 </head>
@@ -165,7 +168,7 @@
 
 <div id="navbarContainer">
   <div class="logo">B</div>
-  <div class="brand">Bilm</div>
+  <div class="brand">CineNova</div>
 </div>
 
 <main>
@@ -173,7 +176,11 @@
     <div id="playerContainer">
       <!-- Keep iframe but do NOT auto-load external sources. The UI controls below are local-only. -->
       <iframe id="videoPlayer" src="" allowfullscreen allow="fullscreen; encrypted-media" title="Video player (GUI-only)"></iframe>
-      <div id="clickShield"></div>
+      <div id="clickShield" aria-hidden="true"></div>
+      <div id="shieldControls" aria-hidden="false">
+        <div class="shieldBtn" id="shieldStatus">Ad clicks blocked</div>
+        <button class="shieldBtn" id="shieldToggle">Enable player</button>
+      </div>
     </div>
 
     <div id="controlsRowTop">
@@ -212,9 +219,26 @@
   (function(){
     const params = new URLSearchParams(location.search);
     const tmdbId = params.get('id') || 'guest';
-    const storageKey = `bilm-tv-progress-${tmdbId}`;
+    const storageKey = `cinenova-tv-progress-${tmdbId}`;
 
     const iframe = document.getElementById('videoPlayer');
+    // Add click-shield controls for testing — block accidental ad clicks in embedded pages
+    const clickShield = document.getElementById('clickShield');
+    const shieldToggle = document.getElementById('shieldToggle');
+    const shieldStatus = document.getElementById('shieldStatus');
+    (function () {
+      let shieldOn = true;
+      function setShield(on){
+        shieldOn = on;
+        clickShield.style.pointerEvents = on ? 'auto' : 'none';
+        shieldStatus && (shieldStatus.textContent = on ? 'Ad clicks blocked' : 'Player interactive');
+        shieldToggle && (shieldToggle.textContent = on ? 'Enable player' : 'Disable player');
+      }
+      clickShield && clickShield.addEventListener('click', e=>{ if (shieldOn) { e.preventDefault(); e.stopPropagation(); shieldStatus.textContent = 'Blocked ad-click — enable to interact'; setTimeout(()=>shieldStatus.textContent = 'Ad clicks blocked',2000); } });
+      clickShield && clickShield.addEventListener('contextmenu', e=>{ if (shieldOn){ e.preventDefault(); e.stopPropagation(); } });
+      shieldToggle && shieldToggle.addEventListener('click', ()=> setShield(!shieldOn));
+      setShield(true);
+    })();
     const seasonSelect = document.getElementById('seasonSelect');
     const episodeSelect = document.getElementById('episodeSelect');
 
@@ -437,7 +461,7 @@
     updateEmbedPreview();
     updateInfoLine();
 
-    window.bilmUI = {
+    window.cinenovaUI = {
       state,
       setSeason,
       setEpisode,

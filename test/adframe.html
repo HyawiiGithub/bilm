@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Adframe - simulated ad content</title>
+    <style>body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;background:#111;color:#fff;padding:20px;}button{padding:10px 14px;margin:8px;border-radius:8px;background:#a14eff;border:none;color:white;cursor:pointer}</style>
+  </head>
+  <body>
+    <h2>Simulated ad frame</h2>
+    <p>This frame tries to navigate the top-level page and open popups to simulate click-ads.</p>
+    <button id="goTop">Navigate top page</button>
+    <button id="popup">Open popup</button>
+    <script>
+      document.getElementById('goTop').addEventListener('click', () => {
+        try {
+          // attempt to break out to top-level navigation
+          window.top.location = 'https://example.com/?from-adframe=1';
+        } catch (e) {
+          // if blocked, show message
+          alert('Top navigation blocked: ' + (e && e.message));
+        }
+      });
+
+      document.getElementById('popup').addEventListener('click', () => {
+        try {
+          window.open('https://example.com', '_blank');
+        } catch (e) {
+          alert('Popup blocked: ' + (e && e.message));
+        }
+      });
+    </script>
+  </body>
+</html>

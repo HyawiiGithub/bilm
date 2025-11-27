@@ -1,4 +1,4 @@
-const cacheName = 'bilm-cache-v1';  // Cache version name — change this to update cache
+const cacheName = 'cinenova-cache-v1';  // Cache version name — change this to update cache
 const filesToCache = [
   '/',                // Cache root page
   '/index.html',      // Cache main HTML page (adjust path if needed)

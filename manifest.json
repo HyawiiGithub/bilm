@@ -1,6 +1,6 @@
 {
-  "name": "Bilm",
-  "short_name": "Bilm",
+  "name": "CineNova",
+  "short_name": "CineNova",
   "start_url": "/bilm/",
   "display": "standalone",
   "background_color": "#000000",

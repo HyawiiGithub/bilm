@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>CineNova — Ad Sandbox Demo</title>
+    <style>
+      body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;background:#111;color:#fff;padding:20px}
+      .row{display:flex;gap:20px;align-items:flex-start}
+      iframe{width:48%;height:300px;border-radius:8px;border:1px solid #333}
+      .label{font-size:14px;margin-bottom:8px;color:#ccc}
+    </style>
+  </head>
+  <body>
+    <h1>Ad sandbox demo</h1>
+    <p>Left: sandboxed iframe (like the real viewer). Right: unsandboxed frame to show the difference.</p>
+    <div class="row">
+      <div style="width:48%">
+        <div class="label">Sandboxed iframe (no popups / top navigation)</div>
+        <iframe src="./adframe.html" sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock" title="Sandboxed ad frame"></iframe>
+      </div>
+      <div style="width:48%">
+        <div class="label">Unsandboxed iframe (ad frame can open popups or navigate top)</div>
+        <iframe src="./adframe.html" title="Unsandboxed ad frame"></iframe>
+      </div>
+    </div>
+
+    <p style="margin-top:18px;color:#bbb">Try clicking the buttons inside the frames to compare behavior.</p>
+
+  </body>
+</html>
