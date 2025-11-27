@@ -73,16 +73,16 @@
 
 <script>
   // Load shared navbar
-  fetch('/bilm/shared/navbar.html')
+  fetch('../shared/navbar.html')
     .then(res => res.text())
     .then(html => {
       document.getElementById('navbarContainer').innerHTML = html;
       const css = document.createElement('link');
       css.rel = 'stylesheet';
-      css.href = '/bilm/shared/navbar.css';
+      css.href = '../shared/navbar.css';
       document.head.appendChild(css);
       const js = document.createElement('script');
-      js.src = '/bilm/shared/navbar.js';
+      js.src = '../shared/navbar.js';
       document.body.appendChild(js);
     });
 

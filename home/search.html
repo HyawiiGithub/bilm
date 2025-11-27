@@ -19,7 +19,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet" />
 
   <!-- Navbar CSS -->
-  <link rel="stylesheet" href="/bilm/shared/navbar.css" />
+  <link rel="stylesheet" href="../shared/navbar.css" />
 
   <style>
     * {
@@ -131,12 +131,12 @@
   </main>
 
   <script>
-    fetch('/bilm/shared/navbar.html')
+    fetch('../shared/navbar.html')
       .then(res => res.text())
       .then(html => {
         document.getElementById('navbar-placeholder').innerHTML = html;
         const script = document.createElement('script');
-        script.src = '/bilm/shared/navbar.js';
+        script.src = '../shared/navbar.js';
         script.onload = () => {
           if (typeof initNavbar === 'function') initNavbar();
         };
@@ -147,7 +147,10 @@
   <script>
     const TMDB_API_KEY = '3ade810499876bb5672f40e54960e6a2';
     const OMDB_API_KEY = '9bf8cd26';
-    const BASE_URL = 'https://inspecting.github.io/bilm';
+    // Build a base URL that works both for local root servers and when hosted under /bilm
+    const _parts = location.pathname.split('/').filter(Boolean);
+    const _prefix = _parts[0] === 'bilm' ? '/bilm' : '';
+    const BASE_URL = `${location.origin}${_prefix}`;
 
     const urlParams = new URLSearchParams(window.location.search);
     const currentQuery = urlParams.get('q') || '';

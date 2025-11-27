@@ -1,5 +1,8 @@
 const TMDB_API_KEY = '3ade810499876bb5672f40e54960e6a2';
-const BASE_URL = 'https://inspecting.github.io/bilm';
+// Build a dynamic base URL so the app works both when served at root and under /bilm
+const _parts = location.pathname.split('/').filter(Boolean);
+const _prefix = _parts[0] === 'bilm' ? '/bilm' : '';
+const BASE_URL = `${location.origin}${_prefix}`;
 const moviesPerLoad = 15;
 
 let allGenres = [];

@@ -387,22 +387,22 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    fetch('/bilm/shared/navbar.html')
+    fetch('../shared/navbar.html')
       .then(res => res.text())
       .then(html => {
         document.getElementById('navbarContainer').innerHTML = html;
         const css = document.createElement('link');
         css.rel = 'stylesheet';
-        css.href = '/bilm/shared/navbar.css';
+        css.href = '../shared/navbar.css';
         document.head.appendChild(css);
         const script = document.createElement('script');
-        script.src = '/bilm/shared/navbar.js';
+        script.src = '../shared/navbar.js';
         document.body.appendChild(script);
       });
   });
 </script>
 
-<script src="/bilm/shared/adblock/adblock.js"></script>
+<script src="../shared/adblock/adblock.js"></script>
 
 </body>
 </html>

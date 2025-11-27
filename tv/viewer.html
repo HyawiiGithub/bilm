@@ -17,7 +17,7 @@
   <title>CineNova 💜 - TV Show Viewer</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/bilm/shared/navbar.css" />
+   <link rel="stylesheet" href="../shared/navbar.css" />
 
   <style>
     * {
@@ -264,12 +264,12 @@
 </main>
 
 <script>
-  fetch('/bilm/shared/navbar.html')
-    .then(res => res.text())
+  fetch('../shared/navbar.html')
+     .then(res => res.text())
     .then(html => {
       document.getElementById('navbarContainer').innerHTML = html;
-      const script = document.createElement('script');
-      script.src = '/bilm/shared/navbar.js';
+       const script = document.createElement('script');
+       script.src = '../shared/navbar.js';
       document.body.appendChild(script);
     });
 </script>
@@ -477,7 +477,7 @@
 </script>
 
 <!-- 🔒 Load Shared Ad Blocker -->
-<script src="/shared/adblock/adblock.js"></script>
+<script src="../shared/adblock/adblock.js"></script>
 
 </body>
 </html>

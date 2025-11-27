@@ -4,15 +4,28 @@
 
   const shadow = container.attachShadow({ mode: 'open' });
 
+  // Detect common base path. If the site is served under /bilm/ (like GitHub Pages), keep that prefix.
+  // reuse pathParts declared above (avoid redeclaration)
+  const basePrefix = pathParts[0] === 'bilm' ? '/bilm' : '';
+
   const [htmlRes, cssRes] = await Promise.all([
-    fetch('/bilm/shared/navbar.html'),
-    fetch('/bilm/shared/navbar.css')
+    fetch(`${basePrefix}/shared/navbar.html`),
+    fetch(`${basePrefix}/shared/navbar.css`)
   ]);
 
   const html = await htmlRes.text();
   const css = await cssRes.text();
 
   shadow.innerHTML = `<style>${css}</style>${html}`;
+
+  // Wire the logo (was previously an absolute /bilm/ link) to work with basePrefix
+  const logoAnchor = shadow.querySelector('.logo');
+  if (logoAnchor) {
+    logoAnchor.addEventListener('click', e => {
+      e.preventDefault();
+      window.location.href = `${basePrefix}/home/`;
+    });
+  }
 
   const pathParts = location.pathname.split('/').filter(Boolean);
   let page = pathParts.at(-1)?.split('.')[0] || 'home';
@@ -33,9 +46,9 @@
     if (btn.dataset.page === page || (isSearchPage && btn.dataset.page === 'home')) {
       btn.classList.add('active');
     }
-    btn.onclick = () => {
+      btn.onclick = () => {
       const target = btn.dataset.page;
-      window.location.href = `/bilm/${target === 'home' ? 'home/' : target}/`;
+      window.location.href = `${basePrefix}/${target === 'home' ? 'home/' : target}/`;
     };
   });
 
@@ -45,7 +58,7 @@
     if (btn.dataset.page === page || (isSearchPage && btn.dataset.page === 'search')) {
       btn.classList.add('active');
     }
-    btn.onclick = () => {
+      btn.onclick = () => {
       const target = btn.dataset.page;
       if (target === 'search') {
         const overlay = shadow.getElementById('mobileSearchOverlay');
@@ -55,7 +68,7 @@
         document.body.style.overflow = 'hidden';
         return;
       }
-      window.location.href = `/bilm/${target === 'home' ? 'home/' : target}/`;
+      window.location.href = `${basePrefix}/${target === 'home' ? 'home/' : target}/`;
     };
   });
 
@@ -66,7 +79,7 @@
       if (e.key === 'Enter') {
         const query = searchInput.value.trim();
         if (query) {
-          window.location.href = `/bilm/home/search.html?q=${encodeURIComponent(query)}`;
+          window.location.href = `${basePrefix}/home/search.html?q=${encodeURIComponent(query)}`;
         }
       }
     });
@@ -102,7 +115,7 @@
       if (e.key === 'Enter') {
         const query = input.value.trim();
         if (query) {
-          window.location.href = `/bilm/home/search.html?q=${encodeURIComponent(query)}`;
+          window.location.href = `${basePrefix}/home/search.html?q=${encodeURIComponent(query)}`;
         }
       } else if (e.key === 'Escape') {
         closeOverlay();
