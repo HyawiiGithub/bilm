@@ -179,8 +179,8 @@
 
       setTimeout(() => {
         const parts = location.pathname.split('/').filter(Boolean);
-        // assume the site will be hosted under /cinenova after rename - otherwise operate at root
-        const prefix = parts[0] === 'cinenova' ? '/cinenova' : '';
+          // Assume the site will be served under /cinenova/ after the rebrand
+          const prefix = '/cinenova';
         window.location.href = `${prefix}/home/`;
       }, 1000);
     }

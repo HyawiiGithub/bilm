@@ -44,7 +44,8 @@
 
   <!-- Load shared navbar HTML + CSS + JS dynamically like search.html -->
   <script>
-    fetch('../shared/navbar.html')
+    const basePrefix = (location.pathname.split('/').filter(Boolean)[0] === 'cinenova') ? '/cinenova' : '';
+    fetch(`${basePrefix}/shared/navbar.html`)
       .then(res => res.text())
       .then(html => {
         document.getElementById('navbar-placeholder').innerHTML = html;
@@ -52,12 +53,12 @@
         // Load navbar CSS
         const css = document.createElement('link');
         css.rel = 'stylesheet';
-        css.href = '../shared/navbar.css';
+        css.href = `${basePrefix}/shared/navbar.css`;
         document.head.appendChild(css);
 
         // Load navbar JS
         const script = document.createElement('script');
-        script.src = '../shared/navbar.js';
+        script.src = `${basePrefix}/shared/navbar.js`;
         document.body.appendChild(script);
       });
   </script>

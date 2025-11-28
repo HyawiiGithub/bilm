@@ -131,12 +131,13 @@
   </main>
 
   <script>
-    fetch('../shared/navbar.html')
+    const basePrefix = (location.pathname.split('/').filter(Boolean)[0] === 'cinenova') ? '/cinenova' : '';
+    fetch(`${basePrefix}/shared/navbar.html`)
       .then(res => res.text())
       .then(html => {
         document.getElementById('navbar-placeholder').innerHTML = html;
         const script = document.createElement('script');
-        script.src = '../shared/navbar.js';
+        script.src = `${basePrefix}/shared/navbar.js`;
         script.onload = () => {
           if (typeof initNavbar === 'function') initNavbar();
         };
@@ -147,9 +148,8 @@
   <script>
     const TMDB_API_KEY = '3ade810499876bb5672f40e54960e6a2';
     const OMDB_API_KEY = '9bf8cd26';
-    // Build a base URL that works both for local root servers and when hosted under /cinenova
-    const _parts = location.pathname.split('/').filter(Boolean);
-    const _prefix = _parts[0] === 'cinenova' ? '/cinenova' : '';
+    // Canonical production base URL for the rebranded site
+    const _prefix = '/cinenova';
     const BASE_URL = `${location.origin}${_prefix}`;
 
     const urlParams = new URLSearchParams(window.location.search);

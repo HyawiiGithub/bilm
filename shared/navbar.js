@@ -4,10 +4,10 @@
 
   const shadow = container.attachShadow({ mode: 'open' });
 
-  // Detect common base path. After rebrand this script will prefer /cinenova; if the site is root, basePrefix will be empty.
-  // reuse pathParts declared above (avoid redeclaration)
-  // After rebrand, assume the site will live under /cinenova/. If not, basePrefix is empty (root).
-  const basePrefix = pathParts[0] === 'cinenova' ? '/cinenova' : '';
+  // After rebrand the site is expected to be hosted at /cinenova/.
+  // Use the canonical base for links and asset loads.
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  const basePrefix = '/cinenova';
 
   // Migrate legacy localStorage keys from 'bilm-*' to 'cinenova-*' to preserve user progress after rebrand.
   try {
@@ -44,7 +44,6 @@
     });
   }
 
-  const pathParts = location.pathname.split('/').filter(Boolean);
   let page = pathParts.at(-1)?.split('.')[0] || 'home';
   if (page === '') page = 'home';
 

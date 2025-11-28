@@ -17,7 +17,7 @@
   <title>CineNova 💜 - TV Show Viewer</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet" />
-   <link rel="stylesheet" href="../shared/navbar.css" />
+  <!-- Navbar stylesheet will be injected dynamically to respect local dev or /cinenova base -->
 
   <style>
     * {
@@ -263,13 +263,14 @@
   </div>
 </main>
 
-<script>
-  fetch('../shared/navbar.html')
+  <script>
+  const basePrefix = (location.pathname.split('/').filter(Boolean)[0] === 'cinenova') ? '/cinenova' : '';
+  fetch(`${basePrefix}/shared/navbar.html`)
      .then(res => res.text())
     .then(html => {
       document.getElementById('navbarContainer').innerHTML = html;
        const script = document.createElement('script');
-       script.src = '../shared/navbar.js';
+      script.src = `${basePrefix}/shared/navbar.js`;
       document.body.appendChild(script);
     });
 </script>
@@ -477,7 +478,14 @@
 </script>
 
 <!-- 🔒 Load Shared Ad Blocker -->
-<script src="../shared/adblock/adblock.js"></script>
+<script>
+  (function(){
+    const basePrefix = (location.pathname.split('/').filter(Boolean)[0] === 'cinenova') ? '/cinenova' : '';
+    const s = document.createElement('script');
+    s.src = `${basePrefix}/shared/adblock/adblock.js`;
+    document.body.appendChild(s);
+  })();
+</script>
 
 </body>
 </html>

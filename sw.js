@@ -28,7 +28,7 @@ self.addEventListener('activate', (event) => {
   // Remove legacy caches that may have been created under the old brand
   event.waitUntil(
     caches.keys().then(keys => Promise.all(
-      keys.filter(k => k.startsWith('bilm-cache')).map(k => caches.delete(k))
+      keys.filter(k => k !== cacheName).map(k => caches.delete(k))
     ))
   );
 });

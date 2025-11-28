@@ -21,10 +21,10 @@ Steps to publish under `/cinenova/` (recommended when rebranding):
    - Home, Movies, TV and viewer pages should load and not 404.
    - The manifest should use `/cinenova/` base paths (the repo manifest was updated for this).
 
-5. (Optional) If you prefer to keep the repository name as `bilm` and still publish at `/cinenova/`, use a GitHub App/CI step to publish the site to that path or use a custom domain / redirect rule. (Note: the codebase now assumes `/cinenova/` when deployed; compatibility fallbacks were removed.)
+5. (Optional) If you prefer to keep the repository name the same and still publish at `/cinenova/`, use a GitHub App/CI step to publish the site to that path or use a custom domain / redirect rule. The codebase is prepared for `/cinenova/` as the deployment base; it will also work for local development served at the repo root.
 
 Notes and compatibility
-- The JS now detects whether the site is under `/cinenova` or root and builds links accordingly.
-- Icons and manifest start_url are set to `/cinenova/` as part of the rebrand; if you keep the repo name `bilm` and host under `/bilm/`, you may want to update `manifest.json` accordingly.
+ - The JS uses a site base detection and will use `/cinenova` in production, while still working when served locally at the server root (for development).
+ - Icons and manifest start_url are set to `/cinenova/` as part of the rebrand.
 
 If you want, I can rename repo paths in the code to remove the compatibility fallbacks (force only /cinenova) and add a deployment guide tailored to your chosen hosting approach.
