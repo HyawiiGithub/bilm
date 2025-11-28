@@ -235,9 +235,10 @@
       <iframe
         id="videoPlayer"
         src=""
+        title="TV player"
         allowfullscreen
         allow="fullscreen; encrypted-media"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock"
+          allow="autoplay; fullscreen; encrypted-media"
         playsinline
         scrolling="no"
       ></iframe>
@@ -257,8 +258,14 @@
     </div>
 
     <div id="selectors">
-      <select id="seasonSelect"></select>
-      <select id="episodeSelect"></select>
+      <select id="seasonSelect" aria-label="Season selector"></select>
+      <select id="episodeSelect" aria-label="Episode selector"></select>
+    </div>
+    <div id="playerControls" style="margin-top:12px; display:flex; gap:8px; justify-content:center; align-items:center;">
+      <div id="playerStatus" aria-live="polite" style="color:#ddd; font-weight:600">Loading player…</div>
+      <button id="playOnSiteBtn" class="serverBtn" style="padding:6px 10px; font-size:13px;">Play on site</button>
+      <button id="openProviderBtn" class="serverBtn" style="padding:6px 10px; font-size:13px;">Open provider</button>
+      <button id="tryNextBtn" class="serverBtn" style="padding:6px 10px; font-size:13px;">Try next server</button>
     </div>
   </div>
 </main>
@@ -293,6 +300,13 @@
     vidsrc: document.getElementById('serverVidsrc'),
     vidplay: document.getElementById('serverVidplay')
   };
+
+  const openProviderBtn = document.getElementById('openProviderBtn');
+  const tryNextBtn = document.getElementById('tryNextBtn');
+  const playOnSiteBtn = document.getElementById('playOnSiteBtn');
+  const playerStatus = document.getElementById('playerStatus');
+
+  
 
   let currentSeason = 1;
   let currentEpisode = 1;
@@ -376,8 +390,8 @@
 
     shieldToggle.addEventListener('click', () => setShield(!shieldOn));
 
-    // Initial state: ON (blocked)
-    setShield(true);
+    // Initial state: OFF (interactive) — allow provider embeds to behave as before
+    setShield(false);
   })();
 
   function saveProgress() {
@@ -413,6 +427,131 @@
     });
   });
 
+  // 'Open provider' — open current embed src in a new tab
+  openProviderBtn.addEventListener('click', () => {
+    if (!iframe.src) {
+      playerStatus.textContent = 'No provider loaded — select a server first';
+      return;
+    }
+    window.open(iframe.src, '_blank');
+  });
+
+  // 'Try next' — rotate through available servers
+  const serverKeys = Object.keys(servers);
+  tryNextBtn.addEventListener('click', () => {
+    const current = serverKeys.findIndex(k => servers[k].classList.contains('active'));
+    const next = serverKeys[(current + 1) % serverKeys.length];
+    setActive(next);
+  });
+
+  // Play on site logic for TV shows — check hosts under /media/tv/:tmdbId or /media/tv/:imdbId
+  // Robust on-site existence check helper (HEAD -> Range-GET)
+  async function existsHeadOrRange(url) {
+    try {
+      const headRes = await fetch(url, { method: 'HEAD' });
+      if (headRes && headRes.ok) return true;
+    } catch (e) {}
+    try {
+      const getRes = await fetch(url, { method: 'GET', headers: { 'Range': 'bytes=0-0' } });
+      if (getRes && (getRes.status === 206 || getRes.status === 200)) return true;
+    } catch (e) {}
+    return false;
+  }
+
+  async function checkOnSiteTvPaths() {
+    const basePrefix = (location.pathname.split('/').filter(Boolean)[0] === 'cinenova') ? '/cinenova' : '';
+    const candidates = [];
+    if (tmdbId) {
+      candidates.push(
+        `${basePrefix}/media/tv/${tmdbId}/master.m3u8`,
+        `${basePrefix}/media/tv/${tmdbId}/index.m3u8`,
+        `${basePrefix}/media/tv/${tmdbId}.m3u8`,
+        `${basePrefix}/media/tv/${tmdbId}.mp4`,
+        `${basePrefix}/media/tv/${tmdbId}/video.mp4`
+      );
+    }
+    if (imdbId) {
+      candidates.push(
+        `${basePrefix}/media/tv/${imdbId}/master.m3u8`,
+        `${basePrefix}/media/tv/${imdbId}/index.m3u8`,
+        `${basePrefix}/media/tv/${imdbId}.m3u8`,
+        `${basePrefix}/media/tv/${imdbId}.mp4`,
+        `${basePrefix}/media/tv/${imdbId}/video.mp4`
+      );
+    }
+
+    for (const url of candidates) {
+      try {
+        console.debug('[playOnSiteTv] checking', url);
+        if (await existsHeadOrRange(url)) return url;
+      } catch (err) {
+        console.debug('[playOnSiteTv] error checking', url, err);
+      }
+    }
+    return null;
+  }
+
+  async function playOnSiteTv() {
+    playerStatus.textContent = 'Checking on-site files...';
+    const url = await checkOnSiteTvPaths();
+    if (!url) {
+      playerStatus.textContent = 'No on-site copy found — falling back to provider';
+      return;
+    }
+
+    const video = document.createElement('video');
+    video.controls = true;
+    video.autoplay = true;
+    video.style.width = '100%';
+    video.style.height = '100%';
+    video.style.borderRadius = '12px';
+    video.id = 'sitePlayer';
+
+    if (url.endsWith('.m3u8')) {
+      if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = url;
+      } else {
+        if (!window.Hls) {
+          await new Promise((resolve) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.3.6/dist/hls.min.js';
+            s.onload = resolve;
+            document.head.appendChild(s);
+          });
+        }
+        const hls = new Hls();
+        hls.loadSource(url);
+        hls.attachMedia(video);
+      }
+    } else {
+      video.src = url;
+    }
+
+    iframe.style.display = 'none';
+    iframe.parentElement.insertBefore(video, iframe);
+    playerStatus.textContent = 'Playing on site — enjoy!';
+  }
+
+  playOnSiteBtn.addEventListener('click', playOnSiteTv);
+
+  // Auto-detect on-site availability and provide UI hint
+  (async function autoDetectTvOnSite() {
+    try {
+      playOnSiteBtn.disabled = true;
+      const url = await checkOnSiteTvPaths();
+      if (url) {
+        playOnSiteBtn.disabled = false;
+        playOnSiteBtn.dataset.foundUrl = url;
+        playerStatus.textContent = 'Local copy available — click "Play on site" to play it.';
+      } else {
+        playOnSiteBtn.disabled = false;
+      }
+    } catch (err) {
+      console.debug('[playOnSiteTv] autodetect failed', err);
+      playOnSiteBtn.disabled = false;
+    }
+  })();
+
   function updateIframe() {
     if (!imdbId) return;
     saveProgress();
@@ -422,6 +561,15 @@
       iframe.src = `https://vidplay.to/tv/${imdbId}/${currentSeason}/${currentEpisode}`;
     }
   }
+
+  // Show a simple status when iframe content (cross-origin) finishes loading
+  iframe.addEventListener('load', () => {
+    if (!iframe.src) {
+      playerStatus.textContent = 'No provider loaded';
+      return;
+    }
+    playerStatus.textContent = 'Player loaded — if the player shows "unavailable" try "Try next server" or "Open provider".';
+  });
 
   seasonSelect.addEventListener('change', () => {
     currentSeason = parseInt(seasonSelect.value);

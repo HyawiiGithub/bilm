@@ -64,12 +64,11 @@
       transition: all 0.3s ease;
     }
 
-    iframe {
+      iframe
       width: 100%;
       height: 100%;
-      border: none;
-      border-radius: 12px;
-      display: block;
+        allowfullscreen
+        allow="autoplay; fullscreen; encrypted-media"
       position: relative;
       z-index: 1;
     }
@@ -225,6 +224,7 @@
       <iframe
         id="videoPlayer"
         src=""
+        title="Movie player"
         allowfullscreen
         allow="fullscreen; encrypted-media"
         sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock"
@@ -239,6 +239,13 @@
     </div>
     <button id="fullscreenBtn">Fullscreen</button>
     <button id="closeBtn">X</button>
+
+    <div id="playerControls" style="margin-top:12px; display:flex; gap:8px; justify-content:center; align-items:center;">
+      <div id="playerStatus" aria-live="polite" style="color:#ddd; font-weight:600">Loading player…</div>
+      <button id="playOnSiteBtn" class="serverBtn" style="padding:6px 10px; font-size:13px;">Play on site</button>
+      <button id="openProviderBtn" class="serverBtn" style="padding:6px 10px; font-size:13px;">Open provider</button>
+      <button id="tryNextBtn" class="serverBtn" style="padding:6px 10px; font-size:13px;">Try next server</button>
+    </div>
 
     <div id="serverList">
       <h2>Servers</h2>
@@ -265,9 +272,15 @@
     vidplay: document.getElementById('serverVidplay')
   };
 
+  const openProviderBtn = document.getElementById('openProviderBtn');
+  const tryNextBtn = document.getElementById('tryNextBtn');
+  const playOnSiteBtn = document.getElementById('playOnSiteBtn');
+  const playerStatus = document.getElementById('playerStatus');
+
   function loadServer(server) {
     if (!movieId) {
       console.error('No movie ID provided.');
+      playerStatus.textContent = 'No movie id provided — open movie from the list or append ?id=... in URL.';
       iframe.src = '';
       return;
     }
@@ -284,6 +297,7 @@
         url = '';
     }
     iframe.src = url;
+    playerStatus.textContent = 'Loading ' + server + ' ...';
   }
 
   function setActive(serverKey) {
@@ -303,6 +317,136 @@
 
   setActive('vidsrc');
   loadServer('vidsrc');
+
+  // 'Open provider' opens current embed src in a new tab
+  openProviderBtn.addEventListener('click', () => {
+    if (!iframe.src) {
+      playerStatus.textContent = 'No provider loaded — select a server first';
+      return;
+    }
+    window.open(iframe.src, '_blank');
+  });
+
+  // 'Try next' rotates through available server keys
+  const serverKeys = Object.keys(servers);
+  tryNextBtn.addEventListener('click', () => {
+    const current = serverKeys.findIndex(k => servers[k].classList.contains('active'));
+    const next = serverKeys[(current + 1) % serverKeys.length];
+    setActive(next);
+    loadServer(next);
+  });
+
+  // Play on site logic: checks for hosted media under /media/movie/<movieId> or /media/movie/<movieId>.m3u8/.mp4
+  // Robust on-site existence check: try HEAD, then fall back to a small GET using Range
+  async function existsHeadOrRange(url) {
+    try {
+      // First try a HEAD request
+      const headRes = await fetch(url, { method: 'HEAD' });
+      if (headRes && headRes.ok) return true;
+    } catch (e) {
+      // ignore
+    }
+
+    // Fall back to GET for a 1-byte range to avoid fetching full file
+    try {
+      const getRes = await fetch(url, { method: 'GET', headers: { 'Range': 'bytes=0-0' } });
+      if (getRes && (getRes.status === 206 || getRes.status === 200)) return true;
+    } catch (e) {
+      // ignore
+    }
+    return false;
+  }
+
+  async function checkOnSitePaths() {
+    const basePrefix = (location.pathname.split('/').filter(Boolean)[0] === 'cinenova') ? '/cinenova' : '';
+    // We try relative to the site root or /cinenova if deployed there
+    const candidates = [
+      `${basePrefix}/media/movie/${movieId}/master.m3u8`,
+      `${basePrefix}/media/movie/${movieId}/index.m3u8`,
+      `${basePrefix}/media/movie/${movieId}.m3u8`,
+      `${basePrefix}/media/movie/${movieId}.mp4`,
+      `${basePrefix}/media/movie/${movieId}/video.mp4`
+    ];
+
+    for (const url of candidates) {
+      try {
+        // quick debug log
+        console.debug('[playOnSite] checking', url);
+        if (await existsHeadOrRange(url)) return url;
+      } catch (err) {
+        console.debug('[playOnSite] error checking', url, err);
+      }
+    }
+    return null;
+  }
+
+  async function playOnSite() {
+    if (!movieId) return;
+    playerStatus.textContent = 'Checking on-site files...';
+    const url = await checkOnSitePaths();
+    if (!url) {
+      playerStatus.textContent = 'No on-site copy found — falling back to provider';
+      return;
+    }
+
+    // Replace iframe with native video player
+    const video = document.createElement('video');
+    video.controls = true;
+    video.autoplay = true;
+    video.style.width = '100%';
+    video.style.height = '100%';
+    video.style.borderRadius = '12px';
+    video.id = 'sitePlayer';
+
+    // If HLS (.m3u8) try to use Hls.js when needed
+    if (url.endsWith('.m3u8')) {
+      // prefer browser native HLS where available
+      if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = url;
+      } else {
+        // use HLS.js (load from CDN if not already loaded)
+        if (!window.Hls) {
+          await new Promise((resolve) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.3.6/dist/hls.min.js';
+            s.onload = resolve;
+            document.head.appendChild(s);
+          });
+        }
+        const hls = new Hls();
+        hls.loadSource(url);
+        hls.attachMedia(video);
+      }
+    } else {
+      video.src = url; // mp4 fallback
+    }
+
+    // Swap elements
+    const parent = iframe.parentElement;
+    iframe.style.display = 'none';
+    parent.insertBefore(video, iframe);
+    playerStatus.textContent = 'Playing on site — enjoy!';
+  }
+
+  playOnSiteBtn.addEventListener('click', playOnSite);
+
+  // Auto-detect on-site availability on load and enable/disable button
+  (async function autoDetectOnSite() {
+    try {
+      playOnSiteBtn.disabled = true;
+      const url = await checkOnSitePaths();
+      if (url) {
+        playOnSiteBtn.disabled = false;
+        playOnSiteBtn.dataset.foundUrl = url;
+        playerStatus.textContent = 'Local copy available — click "Play on site" to play it.';
+      } else {
+        playOnSiteBtn.disabled = false; // keep enabled so user can still attempt a manual check
+      }
+    } catch (err) {
+      console.debug('[playOnSite] autodetect failed', err);
+      playOnSiteBtn.disabled = false;
+    }
+  })();
 
   fullscreenBtn.onclick = () => {
     if (!isMobile) {
@@ -380,8 +524,16 @@
 
     shieldToggle.addEventListener('click', () => setShield(!shieldOn));
 
-    // Initial state: ON (blocked)
-    setShield(true);
+    // Initial state: OFF (interactive) — allow provider embeds to behave as before
+    setShield(false);
+    // If iframe loads we show a basic status (we can't inspect cross-origin contents)
+    iframe.addEventListener('load', () => {
+      if (!iframe.src) {
+        playerStatus.textContent = 'No provider loaded';
+        return;
+      }
+      playerStatus.textContent = 'Player loaded — if the player shows "unavailable" try "Try next server" or "Open provider".';
+    });
   })();
 </script>
 
